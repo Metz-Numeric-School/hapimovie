@@ -3,8 +3,11 @@
 namespace App\Controller\Api;
 
 use App\Entity\Movie;
+use OpenApi\Attributes as OA;
 use App\Repository\MovieRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Attributes\Items;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,6 +16,7 @@ use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+#[OA\Tag(name: "Movie")]
 class MovieController extends AbstractController
 {
 
@@ -27,6 +31,14 @@ class MovieController extends AbstractController
 
 
     #[Route('/api/movies', name: 'app_api_movie', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful response',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(ref: new Model(type: Movie::class, groups: ['read']))
+        )
+    )]
     public function index(): JsonResponse
     {
         $movies = $this->movieRepository->findAll();
@@ -39,6 +51,11 @@ class MovieController extends AbstractController
     }
 
     #[Route('/api/movie/{id}', name: 'app_api_movie_get',  methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful response',
+        content: new Model(type: Movie::class, groups: ['read'])
+    )]
     public function get(?Movie $movie = null): JsonResponse
     {
         if(!$movie)
@@ -54,8 +71,13 @@ class MovieController extends AbstractController
     }
 
     #[Route('/api/movies', name: 'app_api_movie_add',  methods: ['POST'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful response',
+        content: new Model(type: Movie::class, groups: ['read'])
+    )]
     public function add(
-        #[MapRequestPayload('json', ['groups' => 'create'])] Movie $movie
+        #[MapRequestPayload('json', ['groups' => ['create']])] Movie $movie
     ): JsonResponse
     {
         $this->em->persist($movie);
@@ -68,7 +90,25 @@ class MovieController extends AbstractController
 
     
     #[Route('/api/movie/{id}', name: 'app_api_movie_update',  methods: ['PUT'])]
-    public function update(Movie $movie, Request $request): JsonResponse
+    #[OA\Put(
+        requestBody: new OA\RequestBody(
+            content: new OA\JsonContent(
+                ref: new Model(
+                    type: Movie::class, 
+                    groups: ['update']
+                )
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Successful response',
+        content: new Model(type: Movie::class, groups: ['read'])
+    )]
+    public function update(
+        Movie $movie, 
+        Request $request
+    ): JsonResponse
     {
         
         $data = $request->getContent();
